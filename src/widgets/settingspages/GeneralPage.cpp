@@ -434,14 +434,14 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     {
         layout.addDescription(
             "Your operating system is not officially supplied with builds. For "
-            "updates, please rebuild chatterino from sources. Report "
+            "updates, please rebuild Chatterino from sources. Report "
             "issues <a href='https://chatterino.com/link/issues'>here</a>.");
     }
 
 #ifdef Q_OS_WIN
     layout.addTitle("Browser Integration");
     layout.addDescription("The browser extension replaces the default "
-                          "Twitch.tv chat with chatterino.");
+                          "Twitch.tv chat with Chatterino.");
 
     {
         if (auto err = nmIpcError().get())
@@ -520,11 +520,11 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Title", s.headerStreamTitle);
 
     layout.addSubtitle("R9K");
-    layout.addDescription(
-        "Hide similar messages by the same user. Toggle hidden "
-        "messages by pressing Ctrl+H.");
+    layout.addDescription("Hide similar messages. Toggle hidden "
+                          "messages by pressing Ctrl+H.");
     layout.addCheckbox("Hide similar messages", s.similarityEnabled);
     //layout.addCheckbox("Gray out matches", s.colorSimilarDisabled);
+    layout.addCheckbox("By the same user", s.hideSimilarBySameUser);
     layout.addCheckbox("Hide my own messages", s.hideSimilarMyself);
     layout.addCheckbox("Receive notification sounds from hidden messages",
                        s.shownSimilarTriggerHighlights);
@@ -651,7 +651,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Only search for username autocompletion with an @",
                        s.userCompletionOnlyWithAt);
 
-    layout.addCheckbox("Show twitch whispers inline", s.inlineWhispers);
+    layout.addCheckbox("Show Twitch whispers inline", s.inlineWhispers);
     layout.addCheckbox("Highlight received inline whispers",
                        s.highlightInlineWhispers);
     layout.addCheckbox("Load message history on connect",

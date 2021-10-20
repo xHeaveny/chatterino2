@@ -180,33 +180,17 @@ MessagePtr TwitchMessageBuilder::build()
         this->message().flags.set(MessageFlag::RedeemedHighlight);
     }
 
+    if (this->tags.contains("first-msg") &&
+        this->tags["first-msg"].toString() == "1")
+    {
+        this->message().flags.set(MessageFlag::FirstMessage);
+    }
+
     // timestamp
     this->emplace<TimestampElement>(
         calculateMessageTimestamp(this->ircMessage));
 
-    bool addModerationElement = true;
-    if (this->senderIsBroadcaster)
-    {
-        addModerationElement = false;
-    }
-    else
-    {
-        bool hasUserType = this->tags.contains("user-type");
-        if (hasUserType)
-        {
-            QString userType = this->tags.value("user-type").toString();
-
-            if (userType == "mod")
-            {
-                if (!args.isStaffOrBroadcaster)
-                {
-                    addModerationElement = false;
-                }
-            }
-        }
-    }
-
-    if (addModerationElement)
+    if (this->shouldAddModerationElements())
     {
         this->emplace<TwitchModerationElement>();
     }
@@ -227,7 +211,7 @@ MessagePtr TwitchMessageBuilder::build()
         this->bits = iterator.value().toString();
     }
 
-    // twitch emotes
+    // Twitch emotes
     std::vector<TwitchEmoteOccurence> twitchEmotes;
 
     iterator = this->tags.find("emotes");
@@ -661,13 +645,11 @@ void TwitchMessageBuilder::appendUsername()
     }
 
     auto nicknames = getCSettings().nicknames.readOnly();
-    auto loginLower = this->message().loginName.toLower();
 
     for (const auto &nickname : *nicknames)
     {
-        if (nickname.name().toLower() == loginLower)
+        if (nickname.match(usernameText))
         {
-            usernameText = nickname.replace();
             break;
         }
     }
@@ -1230,6 +1212,24 @@ Outcome TwitchMessageBuilder::tryParseCheermote(const QString &string)
     return Success;
 }
 
+bool TwitchMessageBuilder::shouldAddModerationElements() const
+{
+    if (this->senderIsBroadcaster)
+    {
+        // You cannot timeout the broadcaster
+        return false;
+    }
+
+    if (this->tags.value("user-type").toString() == "mod" &&
+        !this->args.isStaffOrBroadcaster)
+    {
+        // You cannot timeout moderators UNLESS you are Twitch Staff or the broadcaster of the channel
+        return false;
+    }
+
+    return true;
+}
+
 void TwitchMessageBuilder::appendChannelPointRewardMessage(
     const ChannelPointReward &reward, MessageBuilder *builder, bool isMod,
     bool isBroadcaster)
@@ -1365,7 +1365,7 @@ void TwitchMessageBuilder::hostingSystemMessage(const QString &channelName,
     builder->message().searchText = text;
 }
 
-// irc variant
+// IRC variant
 void TwitchMessageBuilder::deletionMessage(const MessagePtr originalMessage,
                                            MessageBuilder *builder)
 {

@@ -14,7 +14,7 @@ CCACHE_BIN = $$system(which ccache)
   CONFIG+=ccache
 }
 
-MINIMUM_REQUIRED_QT_VERSION = 5.12.0
+MINIMUM_REQUIRED_QT_VERSION = 5.11.0
 
 !versionAtLeast(QT_VERSION, $$MINIMUM_REQUIRED_QT_VERSION) {
     error("You're trying to compile with Qt $$QT_VERSION, but minimum required Qt version is $$MINIMUM_REQUIRED_QT_VERSION")
@@ -167,8 +167,6 @@ SOURCES += \
     src/controllers/notifications/NotificationController.cpp \
     src/controllers/notifications/NotificationModel.cpp \
     src/controllers/pings/MutedChannelModel.cpp \
-    src/controllers/taggedusers/TaggedUser.cpp \
-    src/controllers/taggedusers/TaggedUsersModel.cpp \
     src/debug/Benchmark.cpp \
     src/main.cpp \
     src/messages/Emote.cpp \
@@ -187,6 +185,7 @@ SOURCES += \
     src/messages/search/ChannelPredicate.cpp \
     src/messages/search/LinkPredicate.cpp \
     src/messages/search/MessageFlagsPredicate.cpp \
+    src/messages/search/RegexPredicate.cpp \
     src/messages/search/SubstringPredicate.cpp \
     src/messages/SharedMessageBuilder.cpp \
     src/providers/bttv/BttvEmotes.cpp \
@@ -252,6 +251,7 @@ SOURCES += \
     src/util/LayoutHelper.cpp \
     src/util/NuulsUploader.cpp \
     src/util/RapidjsonHelpers.cpp \
+    src/util/RatelimitBucket.cpp \
     src/util/SplitCommand.cpp \
     src/util/StreamerMode.cpp \
     src/util/StreamLink.cpp \
@@ -399,8 +399,6 @@ HEADERS += \
     src/controllers/notifications/NotificationController.hpp \
     src/controllers/notifications/NotificationModel.hpp \
     src/controllers/pings/MutedChannelModel.hpp \
-    src/controllers/taggedusers/TaggedUser.hpp \
-    src/controllers/taggedusers/TaggedUsersModel.hpp \
     src/debug/AssertInGuiThread.hpp \
     src/debug/Benchmark.hpp \
     src/ForwardDecl.hpp \
@@ -509,6 +507,7 @@ HEADERS += \
     src/util/rangealgorithm.hpp \
     src/util/RapidjsonHelpers.hpp \
     src/util/RapidJsonSerializeQString.hpp \
+    src/util/RatelimitBucket.hpp \
     src/util/RemoveScrollAreaBackground.hpp \
     src/util/SampleCheerMessages.hpp \
     src/util/SampleLinks.hpp \
@@ -583,6 +582,7 @@ HEADERS += \
     src/widgets/settingspages/IgnoresPage.hpp \
     src/widgets/settingspages/KeyboardSettingsPage.hpp \
     src/widgets/settingspages/ModerationPage.hpp \
+    src/widgets/settingspages/NicknamesPage.hpp \
     src/widgets/settingspages/NotificationPage.hpp \
     src/widgets/settingspages/SettingsPage.hpp \
     src/widgets/splits/ClosedSplits.hpp \

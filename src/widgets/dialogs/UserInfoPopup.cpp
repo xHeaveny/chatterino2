@@ -33,7 +33,7 @@
 const QString TEXT_VIEWS("Views: %1");
 const QString TEXT_FOLLOWERS("Followers: %1");
 const QString TEXT_CREATED("Created: %1");
-const QString TEXT_TITLE("%1's Usercard");
+const QString TEXT_TITLE("%1's Usercard - #%2");
 #define TEXT_USER_ID "ID: "
 #define TEXT_UNAVAILABLE "(not available)"
 
@@ -233,7 +233,6 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent)
     {
         user->addStretch(1);
 
-        user.emplace<QCheckBox>("Follow").assign(&this->ui_.follow);
         user.emplace<QCheckBox>("Block").assign(&this->ui_.block);
         user.emplace<QCheckBox>("Ignore highlights")
             .assign(&this->ui_.ignoreHighlights);
@@ -403,56 +402,6 @@ void UserInfoPopup::scaleChangedEvent(float /*scale*/)
 
 void UserInfoPopup::installEvents()
 {
-    std::weak_ptr<bool> hack = this->hack_;
-
-    // follow
-    QObject::connect(
-        this->ui_.follow, &QCheckBox::stateChanged,
-        [this](int newState) mutable {
-            auto currentUser = getApp()->accounts->twitch.getCurrent();
-
-            const auto reenableFollowCheckbox = [this] {
-                this->ui_.follow->setEnabled(true);
-            };
-
-            if (!this->ui_.follow->isEnabled())
-            {
-                // We received a state update while the checkbox was disabled
-                // This can only happen from the "check current follow state" call
-                // The state has been updated to properly reflect the users current follow state
-                reenableFollowCheckbox();
-                return;
-            }
-
-            switch (newState)
-            {
-                case Qt::CheckState::Unchecked: {
-                    this->ui_.follow->setEnabled(false);
-                    getHelix()->unfollowUser(currentUser->getUserId(),
-                                             this->userId_,
-                                             reenableFollowCheckbox, [] {
-                                                 //
-                                             });
-                }
-                break;
-
-                case Qt::CheckState::PartiallyChecked: {
-                    // We deliberately ignore this state
-                }
-                break;
-
-                case Qt::CheckState::Checked: {
-                    this->ui_.follow->setEnabled(false);
-                    getHelix()->followUser(currentUser->getUserId(),
-                                           this->userId_,
-                                           reenableFollowCheckbox, [] {
-                                               //
-                                           });
-                }
-                break;
-            }
-        });
-
     std::shared_ptr<bool> ignoreNext = std::make_shared<bool>(false);
 
     // block
@@ -485,10 +434,11 @@ void UserInfoPopup::installEvents()
                             reenableBlockCheckbox();
                         },
                         [this, reenableBlockCheckbox] {
-                            this->channel_->addMessage(
-                                makeSystemMessage(QString(
+                            this->channel_->addMessage(makeSystemMessage(
+                                QString(
                                     "User %1 couldn't be unblocked, an unknown "
-                                    "error occurred!")));
+                                    "error occurred!")
+                                    .arg(this->userName_)));
                             reenableBlockCheckbox();
                         });
                 }
@@ -564,7 +514,7 @@ void UserInfoPopup::setData(const QString &name, const ChannelPtr &channel)
 {
     this->userName_ = name;
     this->channel_ = channel;
-    this->setWindowTitle(TEXT_TITLE.arg(name));
+    this->setWindowTitle(TEXT_TITLE.arg(name, channel->getName()));
 
     this->ui_.nameLabel->setText(name);
     this->ui_.nameLabel->setProperty("copy-text", name);
@@ -616,8 +566,6 @@ void UserInfoPopup::updateLatestMessages()
 
 void UserInfoPopup::updateUserData()
 {
-    this->ui_.follow->setEnabled(false);
-
     std::weak_ptr<bool> hack = this->hack_;
     auto currentUser = getApp()->accounts->twitch.getCurrent();
 
@@ -651,7 +599,8 @@ void UserInfoPopup::updateUserData()
         this->avatarUrl_ = user.profileImageUrl;
 
         this->ui_.nameLabel->setText(user.displayName);
-        this->setWindowTitle(TEXT_TITLE.arg(user.displayName));
+        this->setWindowTitle(
+            TEXT_TITLE.arg(user.displayName, this->channel_->getName()));
         this->ui_.viewCountLabel->setText(
             TEXT_VIEWS.arg(localizeNumbers(user.viewCount)));
         this->ui_.createdDateLabel->setText(
@@ -682,19 +631,6 @@ void UserInfoPopup::updateUserData()
             [] {
                 // on failure
             });
-
-        // get follow state
-        currentUser->checkFollow(user.id, [this, hack](auto result) {
-            if (!hack.lock())
-            {
-                return;
-            }
-            if (result != FollowResult_Failed)
-            {
-                this->ui_.follow->setChecked(result == FollowResult_Following);
-                this->ui_.follow->setEnabled(true);
-            }
-        });
 
         // get ignore state
         bool isIgnoring = false;
@@ -772,7 +708,6 @@ void UserInfoPopup::updateUserData()
     getHelix()->getUserByName(this->userName_, onUserFetched,
                               onUserFetchFailed);
 
-    this->ui_.follow->setEnabled(false);
     this->ui_.block->setEnabled(false);
     this->ui_.ignoreHighlights->setEnabled(false);
 }
