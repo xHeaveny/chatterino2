@@ -231,8 +231,6 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Separate with lines", s.separateMessages);
     layout.addCheckbox("Alternate background color", s.alternateMessages);
     layout.addCheckbox("Show deleted messages", s.hideModerated, true);
-    layout.addCheckbox("Highlight messages redeemed with Channel Points",
-                       s.enableRedeemedHighlight);
     layout.addDropdown<QString>(
         "Timestamp format (a = am/pm, zzz = milliseconds)",
         {"Disable", "h:mm", "hh:mm", "h:mm a", "hh:mm a", "h:mm:ss", "hh:mm:ss",
@@ -505,6 +503,20 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         box->addWidget(layout.makeButton("Reset", []() {
             getSettings()->cachePath = "";
         }));
+        box->addWidget(layout.makeButton("Clear Cache", [&layout]() {
+            auto reply = QMessageBox::question(
+                layout.window(), "Clear cache",
+                "Are you sure that you want to clear your cache? Emotes may "
+                "take longer to load next time Chatterino is started.",
+                QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::Yes)
+            {
+                auto cacheDir = QDir(getPaths()->cacheDirectory());
+                cacheDir.removeRecursively();
+                cacheDir.mkdir(getPaths()->cacheDirectory());
+            }
+        }));
         box->addStretch(1);
 
         layout.addLayout(box);
@@ -586,7 +598,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 
     layout.addCheckbox("Restart on crash", s.restartOnCrash);
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && !defined(NO_QTKEYCHAIN)
     if (!getPaths()->isPortable())
     {
         layout.addCheckbox(
